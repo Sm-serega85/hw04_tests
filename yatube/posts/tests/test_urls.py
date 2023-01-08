@@ -41,7 +41,6 @@ class PostURLTests(TestCase):
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_posts_post_id_edit_url_exists_at_author(self):
-        """Страница /posts/post_id/edit/ доступна только автору."""
         self.user = User.objects.get(username="NoName")
         self.authorized_client = Client()
         self.authorized_client.force_login(PostURLTests.user)
@@ -49,17 +48,14 @@ class PostURLTests(TestCase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_create_url_redirect_anonymous_on_auth_login(self):
-        """Страница /create/ доступна авторизованному пользователю."""
         response = self.guest_client.get("/create/", follow=True)
         self.assertRedirects(response, "/auth/login/?next=/create/")
 
     def test_unexisting_page_at_desired_location(self):
-        """Страница /unexisting_page/ должна выдать ошибку."""
         response = self.guest_client.get("/unexisting_page/")
         self.assertEqual(response.status_code, 404)
 
     def test_urls_uses_correct_template(self):
-        """URL-адрес использует соответствующий шаблон."""
         templates_url_names = {
             "/": "posts/index.html",
             f"/group/{self.group.slug}/": "posts/group_list.html",

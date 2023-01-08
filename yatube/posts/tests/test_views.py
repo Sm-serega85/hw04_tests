@@ -29,7 +29,6 @@ class PostPagesTests(TestCase):
         self.authorized_client.force_login(PostPagesTests.user)
 
     def test_pages_uses_correct_template(self):
-        """URL-адрес использует соответствующий шаблон."""
         templates_pages_names = {
             reverse("posts:index"): "posts/index.html",
             reverse(
@@ -52,13 +51,11 @@ class PostPagesTests(TestCase):
                 self.assertTemplateUsed(response, reverse_name)
 
     def test_index_show_correct_context(self):
-        """Список постов в шаблоне index равен ожидаемому контексту."""
         response = self.guest_client.get(reverse("posts:index"))
         expected = list(Post.objects.all()[:10])
         self.assertEqual(list(response.context["page_obj"]), expected)
 
     def test_group_list_show_correct_context(self):
-        """Список постов в шаблоне group_list равен ожидаемому контексту."""
         response = self.guest_client.get(
             reverse("posts:group_list", kwargs={"slug": self.group.slug})
         )
@@ -66,7 +63,6 @@ class PostPagesTests(TestCase):
         self.assertEqual(list(response.context["page_obj"]), expected)
 
     def test_profile_show_correct_context(self):
-        """Список постов в шаблоне profile равен ожидаемому контексту."""
         response = self.guest_client.get(
             reverse("posts:profile", args=(self.post.author,))
         )
@@ -74,7 +70,6 @@ class PostPagesTests(TestCase):
         self.assertEqual(list(response.context["page_obj"]), expected)
 
     def test_post_detail_show_correct_context(self):
-        """Шаблон post_detail сформирован с правильным контекстом."""
         response = self.guest_client.get(
             reverse("posts:post_detail", kwargs={"post_id": self.post.id})
         )
@@ -83,7 +78,6 @@ class PostPagesTests(TestCase):
         self.assertEqual(response.context.get("post").group, self.post.group)
 
     def test_create_edit_show_correct_context(self):
-        """Шаблон create_edit сформирован с правильным контекстом."""
         response = self.authorized_client.get(
             reverse("posts:post_edit", kwargs={"post_id": self.post.id})
         )
@@ -97,7 +91,6 @@ class PostPagesTests(TestCase):
                 self.assertIsInstance(form_field, expected)
 
     def test_create_show_correct_context(self):
-        """Шаблон create сформирован с правильным контекстом."""
         response = self.authorized_client.get(reverse("posts:post_create"))
         form_fields = {
             "text": forms.fields.CharField,
@@ -109,12 +102,13 @@ class PostPagesTests(TestCase):
                 self.assertIsInstance(form_field, expected)
 
     def check_group_in_pages(self):
-        """Проверяем создание group при создании поста на страницах."""
         const = {"group": self.post.group}
         form_fields = {
             reverse("posts:index"): const,
-            reverse("posts:group_list", kwargs={"slug": self.group.slug}): const,
-            reverse("posts:profile", kwargs={"username": self.post.author}): const,
+            reverse("posts:group_list",
+                    kwargs={"slug": self.group.slug}): const,
+            reverse("posts:profile",
+                    kwargs={"username": self.post.author}): const,
         }
         for value, expected in form_fields.items():
             with self.subTest(value=value):
@@ -123,7 +117,6 @@ class PostPagesTests(TestCase):
                 self.assertIn(form_field, expected)
 
     def check_group_not_in_mistake_group_list_page(self):
-        """Проверяем чтобы созданный Пост с группой не попап в чужую группу."""
         response = self.authorized_client.get(
             reverse("posts:group_list", kwargs={"slug": self.group.slug})
         )
