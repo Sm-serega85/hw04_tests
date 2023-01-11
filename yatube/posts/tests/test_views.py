@@ -22,7 +22,7 @@ class PostPagesTests(TestCase):
             author=cls.user,
             text="Тестовый пост",
             group=cls.group
-        )                
+        )
 
     def setUp(self):
         self.guest_client = Client()
@@ -76,16 +76,15 @@ class PostPagesTests(TestCase):
 
     def test_post_detail_show_correct_context(self):
         """Шаблон post_detail сформирован с правильным контекстом."""
-        
+
         response = self.guest_client.get(
             reverse("posts:post_detail", kwargs={"post_id": self.post.id})
         )
 
-        responsePost = response.context.get("post")            
-
-        self.assertEqual(responsePost.text, self.post.text)
-        self.assertEqual(responsePost.author, self.post.author)
-        self.assertEqual(responsePost.group, self.post.group)
+        responsepost = response.context.get("post")
+        self.assertEqual(responsepost.text, self.post.text)
+        self.assertEqual(responsepost.author, self.post.author)
+        self.assertEqual(responsepost.group, self.post.group)
 
     def test_create_edit_show_correct_context(self):
         """Шаблон create_edit сформирован с правильным контекстом."""
@@ -148,8 +147,8 @@ class PostPagesTests(TestCase):
         new_posts = [
             Post(
                 author=self.user,
-                text=f'тестовый пост {i}',    
-                group=self.group            
+                text=f'тестовый пост {i}',
+                group=self.group
             ) for i in range(1, 13)
         ]
         Post.objects.bulk_create(new_posts)
@@ -160,5 +159,4 @@ class PostPagesTests(TestCase):
 
         # на второй странице должно быть три поста
         response = self.client.get(reverse('posts:index') + '?page=2')
-        self.assertEqual(len(response.context['page_obj']), 3)    
-        
+        self.assertEqual(len(response.context['page_obj']), 3)

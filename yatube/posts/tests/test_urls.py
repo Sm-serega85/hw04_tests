@@ -79,13 +79,15 @@ class PostURLTests(TestCase):
     def test_post_id_edit_url(self):
         """Страница /edit/ НЕ доступна НЕ авторизованному пользователю."""
         self.guest_client = Client()
-        response = self.guest_client.get(f'/posts/{PostURLTests.post.id}/edit/')
+        response = self.guest_client.get(f'/posts/{PostURLTests.post.id}'
+                                         f'/edit/')
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
     def test_post_edit_url(self):
         """Страница /edit/ НЕ доступна авториз. пользователю, НЕ автору."""
         self.authorized_client = Client()
-        response = self.authorized_client.get(f'/posts/{PostURLTests.post.id}/edit/')
+        response = self.authorized_client.get(f'/posts/{PostURLTests.post.id}'
+                                              f'/edit/')
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
     def test_create_new_url(self):
