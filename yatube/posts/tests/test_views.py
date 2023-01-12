@@ -136,9 +136,7 @@ class PostPagesTests(TestCase):
 
     def test_check_group_not_in_mistake_group_list_page(self):
         """Проверяем чтобы созданный пост с группой не попал в чужую группу."""
-        page = reverse(
-                "posts:group_list", kwargs={"slug": self.group2.slug}
-            )
+        page = reverse("posts:group_list", kwargs={"slug": self.group2.slug})
         response = self.authorized_client.get(page)
         pageposts = list(response.context["page_obj"])
         self.assertFalse(self.post in pageposts)
