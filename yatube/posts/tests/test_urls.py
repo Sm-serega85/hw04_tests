@@ -13,6 +13,7 @@ class PostURLTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create(username="NoName")
+        cls.user2 = User.objects.create(username="NoName2")
         cls.group = Group.objects.create(
             title="Тестовая группа",
             slug="test-slug",
@@ -21,6 +22,10 @@ class PostURLTests(TestCase):
         cls.post = Post.objects.create(
             author=cls.user,
             text="Тестовый пост",
+        )
+        cls.post2 = Post.objects.create(
+            author=cls.user2,
+            text="Тестовый пост автора 2",
         )
 
     def setUp(self):
@@ -45,13 +50,8 @@ class PostURLTests(TestCase):
         response = self.authorized_client.get(f"/posts/{self.post.id}/edit/")
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_create_url_redirect_anonymous_on_auth_login(self):
-        """Страница /create/ доступна авторизованному пользователю."""
-        response = self.guest_client.get("/create/", follow=True)
-        self.assertRedirects(response, "/auth/login/?next=/create/")
-
     def test_unexisting_page_at_desired_location(self):
-        """Страница /unexisting_page/ должна выдать ошибку."""
+        """Страница /unexisting_page/ не существует."""
         response = self.guest_client.get("/unexisting_page/")
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
 
@@ -70,27 +70,23 @@ class PostURLTests(TestCase):
                 response = self.authorized_client.get(url)
                 self.assertTemplateUsed(response, template)
 
-    # Закрытые адреса НЕ доступны не авторизованному клиенту
-    def test_create_url(self):
-        """Страница /create/ НЕ доступна не авторизованному пользователю."""
-        response = self.guest_client.get('/create/')
+    def test_create_url_redirect_anonymous_on_auth_login(self):
+        """Страница /create/ недоступна неавторизованому клиенту."""
+        response = self.guest_client.get("/create/")
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertRedirects(response, "/auth/login/?next=/create/")
 
-    def test_post_id_edit_url(self):
-        """Страница /edit/ НЕ доступна НЕ авторизованному пользователю."""
-        self.guest_client = Client()
+    def test_post_edit_url_redirect_anonymous_on_auth_login(self):
+        """Страница /edit/ недоступна неавторизованному пользователю."""
         response = self.guest_client.get(f'/posts/{PostURLTests.post.id}'
                                          f'/edit/')
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertRedirects(response, f'/auth/login/?next='
+                                       f'/posts/{PostURLTests.post.id}/edit/')
 
-    def test_post_edit_url(self):
-        """Страница /edit/ НЕ доступна авториз. пользователю, НЕ автору."""
-        self.authorized_client = Client()
-        response = self.authorized_client.get(f'/posts/{PostURLTests.post.id}'
+    def test_post_edit_url_redirect_not_author_on_post_view(self):
+        """Страница /edit/ недоступна авториз. пользователю, не автору."""
+        response = self.authorized_client.get(f'/posts/{PostURLTests.post2.id}'
                                               f'/edit/')
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
-
-    def test_create_new_url(self):
-        """Страница /create_new/ НЕ доступна, так как не существует."""
-        response = self.guest_client.get('/create_new/')
-        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        self.assertRedirects(response, f'/posts/{PostURLTests.post2.id}/')

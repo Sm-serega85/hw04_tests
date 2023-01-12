@@ -18,15 +18,17 @@ class PostModelTest(TestCase):
         )
         cls.post = Post.objects.create(
             author=cls.user,
-            text='Тестовый  пост ',
+            text='Тестовый пост 12345678',
         )
 
     def test_models_have_correct_object_names(self):
         """Проверяем, что у моделей корректно работает __str__."""
         post = PostModelTest.post
         group = PostModelTest.group
-        vals = ((str(post), post.text[:15]),
-                (str(group), group.title))
+        vals = (
+            (str(post), post.text[:15]),
+            (str(group), group.title)
+        )
         for value, expected in vals:
             with self.subTest(value=value):
                 self.assertEqual(value, expected)

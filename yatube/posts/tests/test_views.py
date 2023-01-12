@@ -18,6 +18,11 @@ class PostPagesTests(TestCase):
             slug="test-slug",
             description="Тестовое описание",
         )
+        cls.group2 = Group.objects.create(
+            title="Тестовая группа 2",
+            slug="test-slug-2",
+            description="Тестовое описание 2",
+        )
         cls.post = Post.objects.create(
             author=cls.user,
             text="Тестовый пост",
@@ -37,7 +42,7 @@ class PostPagesTests(TestCase):
                 "posts:group_list", kwargs={"slug": self.group.slug}
             ): "posts/group_list.html",
             reverse(
-                "posts:profile", kwargs={"username": self.post.author}
+                "posts:profile", kwargs={"username": self.user}
             ): "posts/profile.html",
             reverse(
                 "posts:post_detail", kwargs={"post_id": self.post.id}
@@ -69,7 +74,7 @@ class PostPagesTests(TestCase):
     def test_profile_show_correct_context(self):
         """Список постов в шаблоне profile равен ожидаемому контексту."""
         response = self.guest_client.get(
-            reverse("posts:profile", args=(self.post.author,))
+            reverse("posts:profile", args=(self.user,))
         )
         expected = list(Post.objects.filter(author_id=self.user.id)[:10])
         self.assertEqual(list(response.context["page_obj"]), expected)
@@ -114,35 +119,31 @@ class PostPagesTests(TestCase):
 
     def test_check_group_in_pages(self):
         """Проверяем создание поста на страницах с выбранной группой"""
-        form_fields = {
-            reverse("posts:index"): Post.objects.get(group=self.post.group),
+        expected = list(Post.objects.filter(group=self.group)[:10])
+        pages = [
+            reverse("posts:index"),
             reverse(
                 "posts:group_list", kwargs={"slug": self.group.slug}
-            ): Post.objects.get(group=self.post.group),
+            ),
             reverse(
-                "posts:profile", kwargs={"username": self.post.author}
-            ): Post.objects.get(group=self.post.group),
-        }
-        for value, expected in form_fields.items():
-            with self.subTest(value=value):
-                response = self.authorized_client.get(value)
-                form_field = response.context["page_obj"]
-                self.assertIn(expected, form_field)
+                "posts:profile", kwargs={"username": self.user}
+            )
+        ]
+        for page in pages:
+            response = self.authorized_client.get(page)
+            pageposts = list(response.context["page_obj"])
+            self.assertEqual(expected, pageposts)
 
     def test_check_group_not_in_mistake_group_list_page(self):
-        """Проверяем чтобы созданный Пост с группой не попал в чужую группу."""
-        form_fields = {
-            reverse(
-                "posts:group_list", kwargs={"slug": self.group.slug}
-            ): Post.objects.exclude(group=self.post.group),
-        }
-        for value, expected in form_fields.items():
-            with self.subTest(value=value):
-                response = self.authorized_client.get(value)
-                form_field = response.context["page_obj"]
-                self.assertNotIn(expected, form_field)
+        """Проверяем чтобы созданный пост с группой не попал в чужую группу."""
+        page = reverse(
+                "posts:group_list", kwargs={"slug": self.group2.slug}
+            )
+        response = self.authorized_client.get(page)
+        pageposts = list(response.context["page_obj"])
+        self.assertFalse(self.post in pageposts)
 
-    def test_paginator_first_page(self):
+    def test_paginator(self):
         """Проверка пагинатора."""
         new_posts = [
             Post(
@@ -153,10 +154,19 @@ class PostPagesTests(TestCase):
         ]
         Post.objects.bulk_create(new_posts)
 
-        # количество постов на первой странице равно 10
-        response = self.client.get(reverse("posts:index"))
-        self.assertEqual(len(response.context['page_obj']), 10)
-
-        # на второй странице должно быть три поста
-        response = self.client.get(reverse('posts:index') + '?page=2')
-        self.assertEqual(len(response.context['page_obj']), 3)
+        pages = [
+            reverse("posts:index"),
+            reverse(
+                "posts:group_list", kwargs={"slug": self.group.slug}
+            ),
+            reverse(
+                "posts:profile", kwargs={"username": self.user}
+            )
+        ]
+        for page in pages:
+            # количество постов на первой странице равно 10
+            response = self.client.get(page)
+            self.assertEqual(len(response.context['page_obj']), 10)
+            # на второй странице должно быть три поста
+            response = self.client.get(page + '?page=2')
+            self.assertEqual(len(response.context['page_obj']), 3)
