@@ -33,6 +33,15 @@ class PostPagesTests(TestCase):
         self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(PostPagesTests.user)
+        self.pages = [
+            reverse("posts:index"),
+            reverse(
+                "posts:group_list", kwargs={"slug": self.group.slug}
+            ),
+            reverse(
+                "posts:profile", kwargs={"username": self.user}
+            )
+        ]
 
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
@@ -120,16 +129,8 @@ class PostPagesTests(TestCase):
     def test_check_group_in_pages(self):
         """Проверяем создание поста на страницах с выбранной группой"""
         expected = list(Post.objects.filter(group=self.group)[:10])
-        pages = [
-            reverse("posts:index"),
-            reverse(
-                "posts:group_list", kwargs={"slug": self.group.slug}
-            ),
-            reverse(
-                "posts:profile", kwargs={"username": self.user}
-            )
-        ]
-        for page in pages:
+
+        for page in self.pages:
             response = self.authorized_client.get(page)
             pageposts = list(response.context["page_obj"])
             self.assertEqual(expected, pageposts)
@@ -139,7 +140,7 @@ class PostPagesTests(TestCase):
         page = reverse("posts:group_list", kwargs={"slug": self.group2.slug})
         response = self.authorized_client.get(page)
         pageposts = list(response.context["page_obj"])
-        self.assertFalse(self.post in pageposts)
+        self.assertNotIn(self.post, pageposts)
 
     def test_paginator(self):
         """Проверка пагинатора."""
@@ -152,19 +153,14 @@ class PostPagesTests(TestCase):
         ]
         Post.objects.bulk_create(new_posts)
 
-        pages = [
-            reverse("posts:index"),
-            reverse(
-                "posts:group_list", kwargs={"slug": self.group.slug}
-            ),
-            reverse(
-                "posts:profile", kwargs={"username": self.user}
-            )
-        ]
-        for page in pages:
-            # количество постов на первой странице равно 10
-            response = self.client.get(page)
-            self.assertEqual(len(response.context['page_obj']), 10)
-            # на второй странице должно быть три поста
-            response = self.client.get(page + '?page=2')
-            self.assertEqual(len(response.context['page_obj']), 3)
+        pages_posts = [
+            (1, 10),
+            (2, 3)
+            ]
+
+        for page in self.pages:
+            for pagepost in pages_posts:
+                with self.subTest(value=page):
+                    response = self.client.get(page + f'?page={pagepost[0]}')
+                    self.assertEqual(len(response.context['page_obj']),
+                                     pagepost[1])
