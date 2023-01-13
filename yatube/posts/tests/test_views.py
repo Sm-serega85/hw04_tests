@@ -156,7 +156,7 @@ class PostPagesTests(TestCase):
         pages_posts = [
             (1, 10),
             (2, 3)
-            ]
+        ]
 
         for page in self.pages:
             for pagepost in pages_posts:
